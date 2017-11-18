@@ -2,23 +2,27 @@
 
 namespace adapter;
 
-use api\ProxyApi;
+use api\Proxy6;
+use interfaces\ProfileInterface;
 use interfaces\ProxyAccessInstance;
 use exception\ProxyAdapterException;
+use interfaces\ProxyDataExtendedInterface;
 use interfaces\ProxyDataInterface;
-use Model\Profile;
 
 class ProxyAdapter
 {
     /** @var ProxyAccessInstance */
     private $proxyAccess;
-    /** @var Profile */
+    /** @var ProfileInterface */
     private $profile;
+    /** @var ProxyDataExtendedInterface|string */
+    private $proxyClass;
 
-    public function __construct(ProxyAccessInstance $proxyAccess, Profile $profile)
+    public function __construct(ProxyAccessInstance $proxyAccess, ProfileInterface $profile, string $proxyClass)
     {
         $this->proxyAccess = $proxyAccess;
         $this->profile = $profile;
+        $this->proxyClass = $proxyClass;
     }
 
     public function getProxy($availableForCount = 1): ProxyDataInterface
@@ -26,48 +30,36 @@ class ProxyAdapter
         if ($this->profile->getProxy() && $this->isCheck($this->profile->getProxy())) {
             return $this->profile->getProxy();
         }
-        /** @var Proxy[] $proxies */
-        $proxies = Proxy::find(["conditions" => ['count' => $availableForCount]]);
+        $proxies = $this->proxyClass::getProxiesByCount($availableForCount);
         foreach ($proxies as $proxy) {
-            $data = $this->profile::find(["conditions" => ['proxyId' => $proxy->getId()]]);
-            if (count($data) < $availableForCount && $this->isCheck($proxy)) {
+            if ($this->profile::countProfilesByProxy($proxy) < $availableForCount && $this->isCheck($proxy)) {
                 return $proxy;
             }
         }
-        $proxyApi = new ProxyApi($this->proxyAccess);
-        $data = $proxyApi->buy();
-        $proxy = new Proxy();
-        $proxy->id = $data['id'];
-        $proxy->ip = $data['ip'];
-        $proxy->port = $data['port'];
-        $proxy->user = $data['user'];
-        $proxy->password = $data['pass'];
-        $proxy->type = $data['type'];
-        $proxy->date = $data['date'];
-        $proxy->dateEnd = $data['date_end'];
-        $proxy->active = $data['active'];
-        $proxy->count = $availableForCount;
-        $proxy->save();
-
+        $proxyApi = new Proxy6($this->proxyAccess, $this->proxyClass);
+        /** @var ProxyDataExtendedInterface $proxy */
+        $proxy = $proxyApi->buy();
         if(!$this->isCheck($proxy)) {
-            throw new ProxyAdapterException($this, 'Прокси левая купилась');
+            throw new ProxyAdapterException('Прокси левая купилась');
         }
+        $proxy->save();
+        $this->profile->setProxy($proxy);
+        $this->profile->save();
         return $proxy;
     }
 
     /**
      * Проверка прокси
      *
-     * @param ProxyDataInterface $proxy
-     * @param null  $url
-     *
+     * @param ProxyDataExtendedInterface $proxy
+     * @param null $url
      * @return bool
      */
-    private function isCheck(ProxyDataInterface $proxy, $url = null)
+    private function isCheck(ProxyDataExtendedInterface $proxy, $url = null)
     {
         // todo продление если надо
         // todo
-        $this->profile->proxyId = $proxy->getId();
+        // $this->profile->proxyId = $proxy->getId();
         return true;
     }
 }
