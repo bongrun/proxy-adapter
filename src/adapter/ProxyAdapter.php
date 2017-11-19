@@ -1,13 +1,13 @@
 <?php
 
-namespace adapter;
+namespace bongrun\adapter;
 
-use api\Proxy6;
-use interfaces\ProfileInterface;
-use interfaces\ProxyAccessInstance;
-use exception\ProxyAdapterException;
-use interfaces\ProxyDataExtendedInterface;
-use interfaces\ProxyDataInterface;
+use bongrun\api\Proxy6;
+use bongrun\interfaces\ProfileInterface;
+use bongrun\interfaces\ProxyAccessInstance;
+use bongrun\exception\ProxyAdapterException;
+use bongrun\interfaces\ProxyDataExtendedInterface;
+use bongrun\interfaces\ProxyDataInterface;
 
 class ProxyAdapter
 {

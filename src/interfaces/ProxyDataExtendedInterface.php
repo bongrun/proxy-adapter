@@ -1,6 +1,8 @@
 <?php
 
-namespace interfaces;
+namespace bongrun\interfaces;
+
+use bongrun\interfaces\ProxyDataInterface;
 
 /**
  * Interface ProxyDataExtendedInterface
